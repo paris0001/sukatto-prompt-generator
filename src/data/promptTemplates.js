@@ -50,8 +50,18 @@ export function generatePrompts(theme) {
 All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
 Copy the exact character descriptions below into both parts. Do NOT alter any physical detail.`;
 
+  const totalChars = theme.lines.reduce((sum, l) => sum + l.text.length, 0);
+  const speechTime = (totalChars / 7).toFixed(1);
+
+  const timingNote = `#TIMING
+Total duration: 12 seconds per part. Dialogue target: 60-80 chars total across all lines.
+Current dialogue: ${totalChars} chars / ~${speechTime}s of speech.
+FINAL 1 SECOND: NO DIALOGUE. Silent reaction shot. Only ambient sound.`;
+
   const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.
+
+${timingNote}
 
 ${consistencyNote}
 
@@ -61,12 +71,16 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (12 seconds)
+#SCENE (0:00-0:11 active, 0:11-0:12 silent)
 
-${scene1Lines}`;
+${scene1Lines}
+
+FINAL 1 SECOND (0:11-0:12): No dialogue. Hold on character's face. Silent reaction. Only ambient sound.`;
 
   const part2 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story. Continuing directly from Part 1.
 No text on screen except final message. No subtitles. No background music.
+
+${timingNote}
 
 ${consistencyNote}
 
@@ -76,12 +90,12 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (12 seconds)
+#SCENE (0:00-0:11 active, 0:11-0:12 silent)
 
 ${scene2Lines}
 
-Text fades in center of screen: 「${theme.endText}」
-Slow fade to black.`;
+FINAL 1 SECOND (0:11-0:12): No dialogue. Slow fade to black. Complete silence.
+Text fades in center of screen: 「${theme.endText}」`;
 
   // Build script text
   const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');

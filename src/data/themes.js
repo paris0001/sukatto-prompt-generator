@@ -38,7 +38,7 @@ const _themes = [
       { speaker: "男性客", text: "遅えんだよ！バイトのくせに気が利かねえな！" },
       { speaker: "男性客", text: "店長呼べよ。お前じゃ話になんねえ" },
       { speaker: "オーナー", text: "店長の私ですが。この子は私の娘です" },
-      { speaker: "オーナー", text: "お客様、本日をもちまして出入り禁止とさせていただきます" },
+      { speaker: "オーナー", text: "お客様、本日をもって出入り禁止とさせていただきます" },
     ],
     endText: "見下した相手が、誰かはわからない",
   },
@@ -66,7 +66,7 @@ const _themes = [
     lines: [
       { speaker: "新人", text: "いや、今車の中。運転手のジジイが遅くてさ" },
       { speaker: "新人", text: "ねえ、もうちょっと飛ばせない？年寄りだから無理？" },
-      { speaker: "社長", text: "元県警本部長の佐藤さんです。私の30年来の友人でもあります" },
+      { speaker: "社長", text: "元県警本部長の佐藤さんです。私の旧友です" },
     ],
     endText: "肩書きがなくても、敬意は払うべきだった",
   },
@@ -124,7 +124,7 @@ const _themes = [
       { speaker: "店員", text: "あの、当店のお品物はかなりお値段が…" },
       { speaker: "老人", text: "孫娘の結婚祝いに何かいいものをと思って" },
       { speaker: "老人", text: "そうですか。では隣のお店に行きますね" },
-      { speaker: "店長", text: "うちの年間最高顧客だ。年3000万以上お買い上げの。なぜ帰したんだ" },
+      { speaker: "店長", text: "年3000万の最高顧客だぞ。なぜ帰した" },
     ],
     endText: "本当の価値は、見た目の中にはない",
   },
@@ -181,9 +181,9 @@ const _themes = [
       "Wide shot. MANAGER bows deeply to HEALTH_OFFICER. The other customers murmur approvingly. One gives a thumbs up. HEALTH_OFFICER sits back down and calmly resumes eating. MANAGER brings him a fresh coffee on the house.",
     ],
     lines: [
-      { speaker: "女性", text: "先週ここで食べて食中毒になったのよ！保健所に通報するわよ！" },
+      { speaker: "女性", text: "ここで食中毒になったのよ！保健所に通報するわ！" },
       { speaker: "女性", text: "慰謝料として30万払いなさい！" },
-      { speaker: "保健所職員", text: "保健所の者ですが。先週この店で食中毒の届出は一件もありませんが" },
+      { speaker: "保健所職員", text: "保健所の者です。この店の届出は一件もありません" },
       { speaker: "保健所職員", text: "お皿に手をつけた形跡がありませんね" },
     ],
     endText: "嘘は、一番聞かれたくない人に聞かれている",
@@ -270,8 +270,8 @@ const _themes = [
       "Wide shot. WIFE opens the front door. Afternoon light floods in. A car is waiting outside — their adult daughter in the driver's seat, waving. WIFE steps out without looking back. The door closes. HUSBAND stands alone in the dim living room. His beer is getting warm. His dinner will not be made.",
     ],
     lines: [
-      { speaker: "夫", text: "お前に何ができるんだ。一人で生きていけると思ってるのか？" },
-      { speaker: "妻", text: "あなたと暮らす30年より、一人の1日の方がずっと楽です" },
+      { speaker: "夫", text: "お前に何ができるんだ" },
+      { speaker: "妻", text: "一人の1日の方がずっと楽です" },
       { speaker: "妻", text: "30年間、話し合いたかったのは私の方です" },
       { speaker: "妻", text: "子供たちが引っ越しを手伝ってくれました" },
     ],
@@ -301,9 +301,9 @@ const _themes = [
     ],
     lines: [
       { speaker: "父親", text: "俺は客だぞ？客に向かってその態度はなんだ？" },
-      { speaker: "娘", text: "パパ…最低" },
+      { speaker: "娘", text: "パパ…最低だよ…" },
       { speaker: "娘", text: "お姉さん、ごめんなさい。パパがごめんなさい" },
-      { speaker: "父親", text: "…すみませんでした" },
+      { speaker: "父親", text: "…本当にすみませんでした" },
     ],
     endText: "子供は、親の姿をそのまま映す鏡",
   },
@@ -360,9 +360,9 @@ const _themes = [
       "After the ceremony. QUIET_MOM walks past BOSS_MOM's group in the hallway. She pauses, smiles gently.\n[QUIET_MOM]: 「給食費は払えてますから、ご心配なく」\nShe continues walking. BOSS_MOM stares at the floor. Her friends pretend to check their phones."
     ],
     lines: [
-      { speaker: "ママ友A", text: "あの人また同じ服。給食費も大変なんじゃない？" },
-      { speaker: "校長", text: "新校舎建設に5000万円のご寄付をいただきました。山田美咲様、前へどうぞ" },
-      { speaker: "母親", text: "子供たちが良い環境で学べるなら、それが一番です" },
+      { speaker: "ママ友A", text: "あの人また同じ服。給食費大変じゃない？" },
+      { speaker: "校長", text: "5000万円のご寄付。山田美咲様、前へどうぞ" },
+      { speaker: "母親", text: "子供たちが良い環境で学べるなら、一番です" },
       { speaker: "母親", text: "給食費は払えてますから、ご心配なく" },
     ],
     endText: "本当の豊かさは、見せびらかさない",
@@ -389,9 +389,9 @@ const _themes = [
       "Wide shot. OLD_FARMER and PARKING_MANAGER walk toward the office. YOUNG_MAN stands alone next to his leased car. He looks at the old light truck, then at his own car. For the first time, his car doesn't feel impressive."
     ],
     lines: [
-      { speaker: "若者", text: "ボロ軽トラ。こんなの乗ってて恥ずかしくないの？" },
-      { speaker: "若者", text: "ここ月極3万の駐車場だよ？場違いじゃない？" },
-      { speaker: "管理人", text: "この方がこの駐車場と周辺一帯のオーナーですよ" },
+      { speaker: "若者", text: "ボロ軽トラ。乗ってて恥ずかしくない？" },
+      { speaker: "若者", text: "ここ月極3万だよ？場違いじゃない？" },
+      { speaker: "管理人", text: "この方が周辺一帯のオーナーですよ" },
       { speaker: "老人", text: "あんたの駐車場代も、わしに入ってくるんだがね" },
     ],
     endText: "本物の金持ちは、車で見栄を張らない",
@@ -418,10 +418,10 @@ const _themes = [
       "Wide shot. The restaurant's reservation book lies open — half the pages are empty. MAITRE_D's locker is cleaned out; he was fired last week. CHEF_OWNER stands alone in his beautiful, empty dining room, straightening a napkin that no one will use tonight."
     ],
     lines: [
-      { speaker: "支配人", text: "当店にはドレスコードがございまして" },
-      { speaker: "女性", text: "予約してある佐々木です" },
-      { speaker: "シェフ", text: "あの人はミシュランの審査員だ！" },
-      { speaker: "シェフ", text: "終わった…" },
+      { speaker: "支配人", text: "申し訳ありません、当店にはドレスコードが…" },
+      { speaker: "女性", text: "予約してある佐々木ですが、何か？" },
+      { speaker: "シェフ", text: "あの人はミシュランの覆面審査員だぞ！" },
+      { speaker: "シェフ", text: "全部終わった…" },
     ],
     endText: "客を選ぶ店は、客にも選ばれない",
   },
@@ -448,10 +448,10 @@ const _themes = [
       "Wide shot. SEAT_THIEF walks away down the aisle, head down, carrying his beer can. RAIL_CEO turns to PASSENGER.\n[RAIL_CEO, gentle]: 「お疲れ様でした。快適な旅を」\nHe returns to reading his book. PASSENGER smiles, settling into her rightful seat."
     ],
     lines: [
-      { speaker: "男", text: "知らないね。早い者勝ちだろ" },
+      { speaker: "男", text: "知らないね。席は早い者勝ちだろ" },
       { speaker: "男", text: "車掌でも呼べば？どうせ来ないよ" },
       { speaker: "車掌", text: "社長、お呼びでしょうか" },
-      { speaker: "社長", text: "この路線を運営している会社の社長です" },
+      { speaker: "社長", text: "ええ。この路線を運営している会社の社長です" },
     ],
     endText: "偉い人ほど、静かに見ている",
   },
@@ -480,7 +480,7 @@ const _themes = [
       { speaker: "学生", text: "正直に言うと、滑り止めですね" },
       { speaker: "学生", text: "こういう小さい会社だと将来性が…" },
       { speaker: "面接官", text: "A社の社外取締役として最終面接を担当します" },
-      { speaker: "面接官", text: "小さい会社の面接官が、大きい会社の最終面接に座ることもあるんですよ" },
+      { speaker: "面接官", text: "小さい会社の面接官が、大企業の最終面接に座ることも" },
     ],
     endText: "世界は思ったより狭い",
   },
@@ -507,7 +507,7 @@ const _themes = [
     ],
     lines: [
       { speaker: "酔った男", text: "遅いんだよクソジジイ！年寄りは引退しろ" },
-      { speaker: "女性", text: "国土交通省の者です。今の暴行、全て記録させていただきました" },
+      { speaker: "女性", text: "国土交通省の者です。暴行、全て記録しました" },
       { speaker: "運転手", text: "お客様が反省されるなら…" },
       { speaker: "女性", text: "いつも安全運転をありがとうございます" },
     ],
@@ -594,9 +594,9 @@ const _themes = [
       "Wide shot. FAKE_DIRECTOR sits alone as others file out of the meeting room. His alumni pin sits on the table — he removed it himself. YOUNG_EMPLOYEE walks past, pausing at the door.\n[YOUNG_EMPLOYEE, quiet]: 「学歴じゃなくて、仕事で勝負すればよかったのに」\nThe door closes."
     ],
     lines: [
-      { speaker: "部長", text: "俺みたいに東大出てればこんなミスはしない" },
-      { speaker: "社員", text: "該当年度の法学部の卒業生名簿にお名前がないんです" },
-      { speaker: "社長", text: "私もその年の法学部卒だが、君の名前は記憶にないな" },
+      { speaker: "部長", text: "東大出てればこんなミスはしない" },
+      { speaker: "社員", text: "法学部の卒業生名簿にお名前がありません" },
+      { speaker: "社長", text: "私もその年の法学部卒だが、記憶にないな" },
       { speaker: "社員", text: "学歴じゃなくて、仕事で勝負すればよかったのに" },
     ],
     endText: "嘘の学歴より、本物の実力を",
@@ -625,7 +625,7 @@ const _themes = [
       { speaker: "夫", text: "今日も残業で遅くなった" },
       { speaker: "妻", text: "先月の残業、ゼロだったよ" },
       { speaker: "妻", text: "毎週木曜日、渋谷のホテル街。6ヶ月で24回" },
-      { speaker: "妻", text: "24回やり直すチャンスがあったのに、24回とも同じ場所に行ったよね" },
+      { speaker: "妻", text: "24回チャンスがあって、24回とも同じ場所だよね" },
     ],
     endText: "嘘は、データに勝てない",
   },
@@ -713,7 +713,7 @@ const _themes = [
       { speaker: "女", text: "何も盗ってないわよ！冤罪よ！" },
       { speaker: "店長", text: "お客様、ポケットの中を見せていただけますか" },
       { speaker: "警備員", text: "レジを通過する映像が残っています" },
-      { speaker: "店長", text: "警察に連絡します" },
+      { speaker: "店長", text: "警察に連絡しますね" },
     ],
     endText: "小さな嘘が、大きな代償になる",
   },
@@ -799,8 +799,8 @@ const _themes = [
       "Wide shot. SENIOR sits alone in the meeting room. On the table: a severance package document. Through the window, the company newsletter with his former junior's smiling face is visible on the office wall. The junior he pushed out is thriving. The senior who pushed him out is done."
     ],
     lines: [
-      { speaker: "先輩", text: "あいつの実力じゃないだろ" },
-      { speaker: "人事", text: "高橋さんは対象者リストに入っています" },
+      { speaker: "先輩", text: "あいつの実力じゃないだろ、運だ" },
+      { speaker: "人事", text: "高橋さんは人員削減の対象者リストに入っています" },
       { speaker: "人事", text: "山田さんを追い出す工作をしたのは高橋さんだと証言があります" },
     ],
     endText: "人を落とした穴に、自分が落ちる",
@@ -827,7 +827,7 @@ const _themes = [
       "Wide shot. SON and WIFE walk out the front door together. SON takes her suitcase. MOTHER_IN_LAW stands in the doorway of her empty house. The hallway echoes. She called it 'her house' — now it truly is hers alone."
     ],
     lines: [
-      { speaker: "姑", text: "出ていきなさい！あんたみたいな嫁は最初からいらなかったのよ！" },
+      { speaker: "姑", text: "出ていきなさい！あんたみたいな嫁はいらないのよ！" },
       { speaker: "息子", text: "美咲と一緒に行く" },
       { speaker: "息子", text: "5年間、黙っててごめん。でももう限界だ" },
       { speaker: "息子", text: "母さんが美咲を捨てるなら、僕はこの家を出る" },
@@ -941,7 +941,7 @@ const _themes = [
       "Wide shot. EX_GF_CEO stands and shakes his hand professionally.\n[EX_GF_CEO]: 「ご提案は検討します。今日はありがとうございました」\nEX_BF walks to the elevator alone. He passes the company nameplate: her name, CEO. He enters the elevator and stares at his own reflection — an average salesman in an average suit."
     ],
     lines: [
-      { speaker: "男", text: "美紀…？" },
+      { speaker: "男", text: "美紀…？社長になったのか…" },
       { speaker: "女性社長", text: "つまらない女なりに、頑張りました" },
       { speaker: "男", text: "あの時は…俺は最低だった" },
       { speaker: "女性社長", text: "あなたに振られたから、自分で会社を作ろうと思ったの" },
@@ -1086,9 +1086,9 @@ const _themes = [
       "After the meeting. BULLY_EMPLOYEE and BULLY_BOSS bow as EX_TEMP leaves.\n[EX_TEMP, at the door]: 「あの時、意見を聞いてもらえなかったことが、自分で考える力をくれました。ありがとうございます」\nShe smiles and exits. BULLY_EMPLOYEE stares at the closed door. BULLY_BOSS glares at him."
     ],
     lines: [
-      { speaker: "社員", text: "派遣のくせに意見するな" },
+      { speaker: "社員", text: "派遣のくせに意見するな。言われたことだけやれ" },
       { speaker: "元派遣", text: "以前こちらで派遣でお世話になりました" },
-      { speaker: "元派遣", text: "意見を聞いてもらえなかったことが、自分で考える力をくれました" },
+      { speaker: "元派遣", text: "意見を無視されたことが、自分で考える力をくれました" },
     ],
     endText: "踏みつけた花が、一番高く咲く",
   },
@@ -1113,9 +1113,9 @@ const _themes = [
       "Wide shot. FORMER_TEACHER takes his hand, bowing deeply. FORMER_STUDENT pats his shoulder. They walk out of the office together — the former student leading the way, showing his once-teacher around the office where they'll work as equals."
     ],
     lines: [
-      { speaker: "元教師", text: "木村…？" },
+      { speaker: "元教師", text: "木村…？まさか…" },
       { speaker: "部長", text: "お久しぶりです、山下先生" },
-      { speaker: "部長", text: "あの言葉がなかったら今の自分はいません" },
+      { speaker: "部長", text: "先生のあの言葉がなかったら今の自分はいません" },
       { speaker: "部長", text: "今は同僚です。改めて、よろしくお願いします" },
     ],
     endText: "落ちこぼれの定義は、時間が書き換える",
@@ -1288,7 +1288,7 @@ const _themes = [
     lines: [
       { speaker: "議員", text: "文句があるなら自分で出馬しろ" },
       { speaker: "議員", text: "住民なんて選挙の時だけ愛想振ればいいんだよ" },
-      { speaker: "新人候補", text: "皆さんの声を聞かせていただきました。これからもずっと聞き続けます" },
+      { speaker: "新人候補", text: "皆さんの声を聞きました。これからもずっと聞き続けます" },
     ],
     endText: "権力は借り物。返す日は必ず来る",
   },
@@ -1316,7 +1316,7 @@ const _themes = [
     ],
     lines: [
       { speaker: "課長", text: "お前の代わりなんかいくらでもいるんだよ！" },
-      { speaker: "社員", text: "代わりはいくらでもいるとおっしゃったので、代わりを探してください" },
+      { speaker: "社員", text: "代わりはいくらでもいると。では代わりを探してください" },
       { speaker: "社員", text: "パワハラの記録も全て人事に提出済みです" },
       { speaker: "部長", text: "お前…何をやった…" },
     ],
@@ -1345,7 +1345,7 @@ const _themes = [
     ],
     lines: [
       { speaker: "担任", text: "子供同士のじゃれ合いだろ。大げさだな" },
-      { speaker: "学級委員", text: "いじめが放置されています。クラス全員の署名です" },
+      { speaker: "学級委員", text: "いじめが放置されています。これはクラス全員の署名です" },
       { speaker: "校長", text: "36人全員が反抗？それは指導の問題だ" },
     ],
     endText: "声は、集まれば無視できない力になる",
@@ -1491,7 +1491,7 @@ const _themes = [
     lines: [
       { speaker: "元彼", text: "俺たちやり直せるだろ？" },
       { speaker: "警察", text: "ストーカー規制法に基づく警告を出しています。3回目です" },
-      { speaker: "女性", text: "3ヶ月分の待ち伏せ記録、200件のメッセージ、GPS記録です" },
+      { speaker: "女性", text: "待ち伏せ記録、200件のメッセージ、GPS記録です" },
       { speaker: "警察", text: "相手が嫌がっていることが全てです" },
     ],
     endText: "記録は、自分を守る最強の盾になる",
@@ -1551,7 +1551,7 @@ const _themes = [
       { speaker: "患者", text: "医者ももうちょっと勉強した方がいいよ" },
       { speaker: "医師", text: "その記事の参考文献の論文、書いたの私です" },
       { speaker: "医師", text: "この分野の教科書も私が書きました" },
-      { speaker: "医師", text: "分からないことは何でも聞いてください。ネットじゃなくて、私に" },
+      { speaker: "医師", text: "何でも聞いてください。ネットじゃなくて、私に" },
     ],
     endText: "検索10分の知識で、30年の専門家に勝てるわけがない",
   },
@@ -1579,7 +1579,7 @@ const _themes = [
       { speaker: "隣人", text: "民法709条の不法行為で訴えてやるからな！" },
       { speaker: "隣人", text: "俺は法律に詳しいんだ！" },
       { speaker: "弁護士", text: "いくつか訂正させてください。私、弁護士なんです" },
-      { speaker: "弁護士", text: "虚偽の法律を並べて脅すのは脅迫罪になり得ます。これは本当の法律です" },
+      { speaker: "弁護士", text: "嘘の法律で脅すのは脅迫罪です。これは本当の法律です" },
     ],
     endText: "にわか知識は、本物の前では武器にならない",
   },
@@ -1606,7 +1606,7 @@ const _themes = [
     ],
     lines: [
       { speaker: "客", text: "この味付け、プロの仕事じゃないね。素人レベル" },
-      { speaker: "シェフ", text: "ギィ・サヴォワ。2012年から2018年まで、私はそこのスーシェフでした" },
+      { speaker: "シェフ", text: "ギィ・サヴォワ。私はそこのスーシェフでした" },
       { speaker: "客", text: "すみません。そのまま食べさせてください" },
       { speaker: "常連", text: "でしょう？" },
     ],
