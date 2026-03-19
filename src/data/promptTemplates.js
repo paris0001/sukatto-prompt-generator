@@ -1,0 +1,100 @@
+// ===== SETTING DESCRIPTIONS =====
+const settingDescriptions = {
+  "電車": "Crowded Japanese commuter train interior. Silver poles, blue priority seats, afternoon light through windows. The train sways gently.",
+  "新幹線": "Japanese Shinkansen bullet train interior. Green car, comfortable seats, large windows showing countryside blur past. Quiet atmosphere.",
+  "カフェ": "A cozy neighborhood cafe. Warm lighting, wooden tables, plants by the window. Afternoon sun streams through windows. A peaceful atmosphere.",
+  "レストラン": "Upscale Japanese restaurant interior. Warm indirect lighting, clean wooden counter, private dining area. Evening setting.",
+  "コンビニ": "Japanese convenience store interior. Bright fluorescent lighting, organized shelves, clean floor. Late afternoon.",
+  "オフィス": "Modern Japanese office. Open plan workspace, fluorescent ceiling lights, desks with computers. Business hours.",
+  "会議室": "Corporate meeting room. Long table, projector screen, glass walls looking out to the office floor. Tense atmosphere.",
+  "病院": "Japanese hospital corridor and waiting area. Clean white walls, blue chairs, soft lighting. Quiet, hushed tones.",
+  "学校": "Japanese school hallway or classroom. Wooden desks, blackboard, afternoon light through large windows. After school hours.",
+  "駐車場": "Large shopping mall outdoor parking lot. Bright afternoon sun. Marked parking spaces near the entrance.",
+  "スーパー": "Japanese supermarket interior. Wide aisles, product displays, checkout counters. Afternoon shopping hours.",
+  "公園": "Japanese neighborhood park. Benches, trees, playground equipment. Warm afternoon sunlight filtering through leaves.",
+  "住宅街": "Quiet Japanese residential neighborhood. Narrow streets, low houses, evening light. Calm atmosphere.",
+  "マンション": "Modern Japanese apartment building entrance hall and corridor. Clean, well-maintained, automatic doors.",
+  "結婚式場": "Japanese wedding venue interior. Elegant decorations, round tables, chandelier lighting. Guests in formal attire.",
+  "役所": "Japanese municipal government office. Counter windows, waiting area with number tickets, bureaucratic atmosphere.",
+  "銀行": "Japanese bank interior. Polished floors, teller windows, waiting area with numbered tickets. Business hours.",
+  "美容院": "Japanese hair salon. Mirrors, styling chairs, warm lighting. Magazines on the counter.",
+  "ファミレス": "Japanese family restaurant. Booth seating, menu tablets, warm interior lighting. Casual dining atmosphere.",
+  "居酒屋": "Japanese izakaya interior. Warm wood tones, paper lanterns, small dishes on the counter. Evening atmosphere.",
+  "タクシー": "Inside a Japanese taxi. Clean interior, white seat covers, meter running. City streets visible through windows.",
+  "面接室": "Japanese job interview room. Simple desk, two chairs facing each other, company logo on the wall. Formal atmosphere.",
+};
+
+// ===== MAIN GENERATION =====
+export function generatePrompts(theme) {
+  const setting = settingDescriptions[theme.setting] || settingDescriptions["オフィス"];
+
+  // Build character descriptions
+  const charBlock = theme.characters.map((c, i) =>
+    `${c.id}: ${c.appearance}`
+  ).join('\n');
+
+  // Build scene descriptions
+  const scene1Lines = theme.scene1.map((s, i) => {
+    const timeStart = i * 4;
+    const timeEnd = (i + 1) * 4;
+    return `(${String(timeStart).padStart(1, '0')}:${String(timeStart).padStart(2, '0')}-${String(timeEnd).padStart(1, '0')}:${String(timeEnd).padStart(2, '0')}) ${s}`;
+  }).join('\n\n');
+
+  const scene2Lines = theme.scene2.map((s, i) => {
+    const timeStart = i * 4;
+    const timeEnd = (i + 1) * 4;
+    return `(${String(timeStart).padStart(1, '0')}:${String(timeStart).padStart(2, '0')}-${String(timeEnd).padStart(1, '0')}:${String(timeEnd).padStart(2, '0')}) ${s}`;
+  }).join('\n\n');
+
+  const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
+All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
+Copy the exact character descriptions below into both parts. Do NOT alter any physical detail.`;
+
+  const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
+No text on screen. No subtitles. No background music. Only dialogue and ambient sound.
+
+${consistencyNote}
+
+#CHARACTERS (IDENTICAL in Part 1 and Part 2)
+${charBlock}
+
+#SETTING
+${setting}
+
+#SCENE (12 seconds)
+
+${scene1Lines}`;
+
+  const part2 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story. Continuing directly from Part 1.
+No text on screen except final message. No subtitles. No background music.
+
+${consistencyNote}
+
+#CHARACTERS (IDENTICAL to Part 1 — same face, same hair, same clothes)
+${charBlock}
+
+#SETTING
+${setting}
+
+#SCENE (12 seconds)
+
+${scene2Lines}
+
+Text fades in center of screen: 「${theme.endText}」
+Slow fade to black.`;
+
+  // Build script text
+  const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');
+
+  return {
+    part1,
+    part2,
+    script: scriptText,
+    lines: theme.lines,
+    endText: theme.endText,
+    meta: {
+      lineCount: theme.lines.length,
+      totalChars: theme.lines.reduce((sum, l) => sum + l.text.length, 0),
+    },
+  };
+}
