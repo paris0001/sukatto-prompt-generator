@@ -89,43 +89,21 @@ function PromptOutput({ result, theme }) {
           </div>
           <CopyButton text={result.script} label="COPY 台本" />
         </div>
-        <div className="p-4 space-y-3">
-          {(result.meta.blocks || []).map((block, bi) => {
-            const isOver = block.chars > block.maxChars
-            return (
-              <div key={bi}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{
-                    background: isOver ? 'rgba(215,58,73,0.08)' : 'rgba(45,127,249,0.08)',
-                    color: isOver ? 'var(--sk-danger)' : 'var(--sk-accent)',
-                    border: `1px solid ${isOver ? 'var(--sk-danger)' : 'var(--sk-accent)'}`,
-                  }}>
-                    Block {block.blockNum} ({block.timeLabel})
-                  </span>
-                  <span className="text-[9px]" style={{ color: isOver ? 'var(--sk-danger)' : 'var(--sk-text-dim)' }}>
-                    {block.chars}字 / 上限{block.maxChars}字 {isOver ? '⚠' : '✓'}
-                  </span>
-                </div>
-                <div className="space-y-1 pl-2" style={{ borderLeft: `2px solid ${isOver ? 'var(--sk-danger)' : 'var(--sk-border)'}` }}>
-                  {block.lines.map((line, li) => (
-                    <div key={li} className="flex items-start gap-2">
-                      <span className="text-[10px] font-bold shrink-0 px-1.5 py-0.5 rounded" style={{ background: 'var(--sk-primary-dim)', color: 'var(--sk-primary)' }}>
-                        {line.speaker}
-                      </span>
-                      <p className="text-sm leading-relaxed flex-1">「{line.text}」</p>
-                      <span className="text-[9px] shrink-0" style={{ color: 'var(--sk-text-dim)' }}>
-                        {line.text.length}字
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-          {/* Silent block */}
+        <div className="p-4 space-y-2">
+          {result.lines.map((line, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="text-[10px] font-bold shrink-0 px-1.5 py-0.5 rounded" style={{ background: 'var(--sk-primary-dim)', color: 'var(--sk-primary)' }}>
+                {line.speaker}
+              </span>
+              <p className="text-sm leading-relaxed flex-1">「{line.text}」</p>
+              <span className="text-[9px] shrink-0 px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--sk-text-dim)', border: '1px solid var(--sk-border)' }}>
+                {line.text.length}字
+              </span>
+            </div>
+          ))}
           <div className="flex items-center gap-2 pt-1" style={{ borderTop: '1px dashed var(--sk-border)' }}>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--sk-text-dim)', border: '1px solid var(--sk-border)' }}>
-              11-12s
+            <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--sk-text-dim)', border: '1px solid var(--sk-border)' }}>
+              0:11-0:12
             </span>
             <span className="text-[10px]" style={{ color: 'var(--sk-text-dim)' }}>無音（セリフなし）</span>
           </div>

@@ -24,75 +24,26 @@ const settingDescriptions = {
   "面接室": "Japanese job interview room. Simple desk, two chairs facing each other, company logo on the wall. Formal atmosphere.",
 };
 
-// ===== DISTRIBUTE LINES INTO 3 TIMING BLOCKS =====
-// Block 1: 0:00-0:04 (4s, ~28 chars max)
-// Block 2: 0:04-0:08 (4s, ~28 chars max)
-// Block 3: 0:08-0:11 (3s, ~21 chars max)
-function distributeLines(lines, speakerMap) {
-  const blocks = [[], [], []];
-  const maxChars = [28, 28, 21]; // max chars per block based on duration
-  const blockChars = [0, 0, 0];
-  let currentBlock = 0;
+// ===== ENHANCE DIALOGUE IN SCENE TEXT =====
+// Replace simple [SPEAKER]: format with detailed speaker identification
+function enhanceDialogue(sceneText, characters) {
+  let enhanced = sceneText;
+  for (const char of characters) {
+    // Extract key traits for speaker tag
+    const genderMatch = char.appearance.match(/\b(Japanese\s+)?(male|female|man|woman|boy|girl)\b/i);
+    const ageMatch = char.appearance.match(/\b(early|mid|late)\s+(\d+)s?\b/i);
+    const clothesMatch = char.appearance.match(/wearing\s+([^,.]+)/i);
+    const gender = genderMatch ? genderMatch[0].replace(/Japanese\s+/i, '') : '';
+    const age = ageMatch ? `${ageMatch[1]} ${ageMatch[2]}s` : '';
+    const clothes = clothesMatch ? clothesMatch[1].trim().slice(0, 35) : '';
+    const traits = [gender, age, clothes].filter(Boolean).join(', ');
 
-  for (const line of lines) {
-    const len = line.text.length;
-    // If current block would overflow, move to next
-    if (currentBlock < 2 && blockChars[currentBlock] + len > maxChars[currentBlock]) {
-      currentBlock++;
-    }
-    // If block 2 also overflows, force into block 2 (last speaking block)
-    if (currentBlock > 2) currentBlock = 2;
-    blocks[currentBlock].push(line);
-    blockChars[currentBlock] += len;
+    // Replace [CHAR_ID] or [CHAR_ID, ...]: with detailed version
+    const idEscaped = char.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\[${idEscaped}([^\\]]*?)\\]`, 'g');
+    enhanced = enhanced.replace(pattern, `[SPEAKER: ${char.id} — ${traits}$1]`);
   }
-
-  return blocks.map((blockLines, i) => {
-    const chars = blockLines.reduce((s, l) => s + l.text.length, 0);
-    const sec = (chars / 7).toFixed(1);
-    const dialogueStr = blockLines.map(l => {
-      const label = speakerMap?.[l.speaker] || l.speaker;
-      return `[SPEAKER: ${label}]: 「${l.text}」`;
-    }).join('\n');
-    return { lines: blockLines, chars, sec, dialogue: dialogueStr };
-  });
-}
-
-// ===== SPEAKER LABEL BUILDER =====
-// Creates unambiguous speaker labels so the AI never confuses who is talking
-function buildSpeakerMap(characters, lines) {
-  // Map Japanese speaker names to character IDs with distinguishing traits
-  const map = {};
-  for (const line of lines) {
-    if (map[line.speaker]) continue;
-    // Find matching character by checking if speaker name relates to character ID
-    const char = characters.find(c => {
-      const id = c.id.toLowerCase();
-      const sp = line.speaker.toLowerCase();
-      // Match common patterns
-      return id.includes(sp) || sp.includes(id) ||
-        (sp.includes('新郎') && id.includes('GROOM')) ||
-        (sp.includes('新婦') && id.includes('BRIDE')) ||
-        (sp.includes('父') && (id.includes('FATHER') || id.includes('DAD'))) ||
-        (sp.includes('母') && (id.includes('MOTHER') || id.includes('MOM'))) ||
-        (sp.includes('娘') && (id.includes('DAUGHTER') || id.includes('GIRL'))) ||
-        (sp.includes('息子') && id.includes('SON')) ||
-        (sp.includes('妻') && (id.includes('WIFE') || id.includes('WOMAN'))) ||
-        (sp.includes('夫') && (id.includes('HUSBAND') || id.includes('MAN')));
-    });
-    if (char) {
-      // Extract key identifying features from appearance
-      const genderMatch = char.appearance.match(/\b(male|female|man|woman|boy|girl)\b/i);
-      const ageMatch = char.appearance.match(/\b(early|mid|late)\s+(\d+)s?\b/i);
-      const clothesMatch = char.appearance.match(/wearing\s+([^,.]+)/i);
-      const gender = genderMatch ? genderMatch[0] : '';
-      const age = ageMatch ? `${ageMatch[1]} ${ageMatch[2]}s` : '';
-      const clothes = clothesMatch ? clothesMatch[1].trim().slice(0, 30) : '';
-      map[line.speaker] = `${char.id} (${[gender, age, clothes].filter(Boolean).join(', ')})`;
-    } else {
-      map[line.speaker] = line.speaker;
-    }
-  }
-  return map;
+  return enhanced;
 }
 
 // ===== MAIN GENERATION =====
@@ -104,26 +55,19 @@ export function generatePrompts(theme) {
     `${c.id}: ${c.appearance}`
   ).join('\n');
 
-  // Build speaker map for unambiguous dialogue attribution
-  const speakerMap = buildSpeakerMap(theme.characters, theme.lines);
-
-  // Distribute dialogue lines into 3 timing blocks
-  const lineBlocks = distributeLines(theme.lines, speakerMap);
-
-  // Build scene descriptions with distributed dialogue
+  // Build scene descriptions with timing and enhanced speaker tags
   const timings = [[0, 4], [4, 8], [8, 11]];
+
   const scene1Lines = theme.scene1.map((s, i) => {
     const [ts, te] = timings[i];
-    const block = lineBlocks[i];
-    const dialogueSection = block && block.dialogue
-      ? `\n${block.dialogue}\n(${block.chars}字 / ~${block.sec}s)`
-      : '';
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}${dialogueSection}`;
+    const enhanced = enhanceDialogue(s, theme.characters);
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${enhanced}`;
   }).join('\n\n');
 
   const scene2Lines = theme.scene2.map((s, i) => {
     const [ts, te] = timings[i];
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}`;
+    const enhanced = enhanceDialogue(s, theme.characters);
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${enhanced}`;
   }).join('\n\n');
 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
@@ -131,20 +75,17 @@ All characters must have IDENTICAL face, hair, skin tone, body type, and clothin
 Copy the exact character descriptions below into both parts. Do NOT alter any physical detail.
 
 #SPEAKER IDENTIFICATION (CRITICAL)
-Each dialogue line is tagged with [SPEAKER: CHARACTER_ID (gender, age, clothing)].
-ALWAYS match the spoken line to the EXACT character described. Do NOT swap speakers.
-Pay special attention to similar roles (e.g., GROOM vs BRIDE, FATHER vs MOTHER).
-The character's GENDER and CLOTHING in the tag must match who is shown speaking on screen.`;
+Each dialogue line is tagged with [SPEAKER: CHARACTER_ID — gender, age, clothing].
+ALWAYS match the spoken line to the EXACT character described in the tag.
+The character's GENDER and CLOTHING in the tag MUST match the person shown speaking on screen.
+Do NOT swap speakers. Pay special attention to similar roles (e.g., GROOM vs BRIDE).`;
 
   const totalChars = theme.lines.reduce((sum, l) => sum + l.text.length, 0);
   const speechTime = (totalChars / 7).toFixed(1);
 
   const timingNote = `#TIMING (CRITICAL)
 Total duration: 12 seconds per part.
-Dialogue blocks:
-  Block 1 (0:00-0:04): up to ~28 chars / 4s
-  Block 2 (0:04-0:08): up to ~28 chars / 4s
-  Block 3 (0:08-0:11): up to ~21 chars / 3s
+Scene blocks: 0:00-0:04 / 0:04-0:08 / 0:08-0:11 (dialogue allowed in all three).
 FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
 Dialogue total: ${totalChars} chars / ~${speechTime}s across ${theme.lines.length} lines.`;
 
@@ -190,15 +131,6 @@ Text fades in center of screen: 「${theme.endText}」`;
   // Build script text
   const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');
 
-  // Build block info for UI display
-  const blockInfo = lineBlocks.map((b, i) => ({
-    blockNum: i + 1,
-    timeLabel: `${timings[i][0]}-${timings[i][1]}s`,
-    maxChars: [28, 28, 21][i],
-    chars: b.chars,
-    lines: b.lines,
-  }));
-
   return {
     part1,
     part2,
@@ -208,7 +140,6 @@ Text fades in center of screen: 「${theme.endText}」`;
     meta: {
       lineCount: theme.lines.length,
       totalChars,
-      blocks: blockInfo,
     },
   };
 }
