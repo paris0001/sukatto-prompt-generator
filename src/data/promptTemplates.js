@@ -24,6 +24,36 @@ const settingDescriptions = {
   "面接室": "Japanese job interview room. Simple desk, two chairs facing each other, company logo on the wall. Formal atmosphere.",
 };
 
+// ===== DISTRIBUTE LINES INTO 3 TIMING BLOCKS =====
+// Block 1: 0:00-0:04 (4s, ~28 chars max)
+// Block 2: 0:04-0:08 (4s, ~28 chars max)
+// Block 3: 0:08-0:11 (3s, ~21 chars max)
+function distributeLines(lines) {
+  const blocks = [[], [], []];
+  const maxChars = [28, 28, 21]; // max chars per block based on duration
+  const blockChars = [0, 0, 0];
+  let currentBlock = 0;
+
+  for (const line of lines) {
+    const len = line.text.length;
+    // If current block would overflow, move to next
+    if (currentBlock < 2 && blockChars[currentBlock] + len > maxChars[currentBlock]) {
+      currentBlock++;
+    }
+    // If block 2 also overflows, force into block 2 (last speaking block)
+    if (currentBlock > 2) currentBlock = 2;
+    blocks[currentBlock].push(line);
+    blockChars[currentBlock] += len;
+  }
+
+  return blocks.map((blockLines, i) => {
+    const chars = blockLines.reduce((s, l) => s + l.text.length, 0);
+    const sec = (chars / 7).toFixed(1);
+    const dialogueStr = blockLines.map(l => `[${l.speaker}]: 「${l.text}」`).join('\n');
+    return { lines: blockLines, chars, sec, dialogue: dialogueStr };
+  });
+}
+
 // ===== MAIN GENERATION =====
 export function generatePrompts(theme) {
   const setting = settingDescriptions[theme.setting] || settingDescriptions["オフィス"];
@@ -33,15 +63,22 @@ export function generatePrompts(theme) {
     `${c.id}: ${c.appearance}`
   ).join('\n');
 
-  // Build scene descriptions with timing: 0-4s, 4-8s, 8-11s (dialogue OK in all three)
+  // Distribute dialogue lines into 3 timing blocks
+  const lineBlocks = distributeLines(theme.lines);
+
+  // Build scene descriptions with distributed dialogue
   const timings = [[0, 4], [4, 8], [8, 11]];
   const scene1Lines = theme.scene1.map((s, i) => {
-    const [ts, te] = timings[i] || [8, 11];
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}`;
+    const [ts, te] = timings[i];
+    const block = lineBlocks[i];
+    const dialogueSection = block && block.dialogue
+      ? `\n${block.dialogue}\n(${block.chars}字 / ~${block.sec}s)`
+      : '';
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}${dialogueSection}`;
   }).join('\n\n');
 
   const scene2Lines = theme.scene2.map((s, i) => {
-    const [ts, te] = timings[i] || [8, 11];
+    const [ts, te] = timings[i];
     return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}`;
   }).join('\n\n');
 
@@ -54,9 +91,12 @@ Copy the exact character descriptions below into both parts. Do NOT alter any ph
 
   const timingNote = `#TIMING (CRITICAL)
 Total duration: 12 seconds per part.
-Dialogue window: 0:00-0:11. All spoken lines must finish by 0:11.
-FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold. Only ambient sound.
-Dialogue total: ${totalChars} chars / ~${speechTime}s of speech.`;
+Dialogue blocks:
+  Block 1 (0:00-0:04): up to ~28 chars / 4s
+  Block 2 (0:04-0:08): up to ~28 chars / 4s
+  Block 3 (0:08-0:11): up to ~21 chars / 3s
+FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
+Dialogue total: ${totalChars} chars / ~${speechTime}s across ${theme.lines.length} lines.`;
 
   const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.
@@ -71,7 +111,7 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (Dialogue: 0:00-0:11 | Silent: 0:11-0:12)
+#SCENE
 
 ${scene1Lines}
 
@@ -90,7 +130,7 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (Dialogue: 0:00-0:11 | Silent: 0:11-0:12)
+#SCENE
 
 ${scene2Lines}
 
@@ -100,6 +140,15 @@ Text fades in center of screen: 「${theme.endText}」`;
   // Build script text
   const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');
 
+  // Build block info for UI display
+  const blockInfo = lineBlocks.map((b, i) => ({
+    blockNum: i + 1,
+    timeLabel: `${timings[i][0]}-${timings[i][1]}s`,
+    maxChars: [28, 28, 21][i],
+    chars: b.chars,
+    lines: b.lines,
+  }));
+
   return {
     part1,
     part2,
@@ -108,7 +157,8 @@ Text fades in center of screen: 「${theme.endText}」`;
     endText: theme.endText,
     meta: {
       lineCount: theme.lines.length,
-      totalChars: theme.lines.reduce((sum, l) => sum + l.text.length, 0),
+      totalChars,
+      blocks: blockInfo,
     },
   };
 }
