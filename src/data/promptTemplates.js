@@ -28,7 +28,7 @@ const settingDescriptions = {
 // Block 1: 0:00-0:04 (4s, ~28 chars max)
 // Block 2: 0:04-0:08 (4s, ~28 chars max)
 // Block 3: 0:08-0:11 (3s, ~21 chars max)
-function distributeLines(lines) {
+function distributeLines(lines, speakerMap) {
   const blocks = [[], [], []];
   const maxChars = [28, 28, 21]; // max chars per block based on duration
   const blockChars = [0, 0, 0];
@@ -49,9 +49,50 @@ function distributeLines(lines) {
   return blocks.map((blockLines, i) => {
     const chars = blockLines.reduce((s, l) => s + l.text.length, 0);
     const sec = (chars / 7).toFixed(1);
-    const dialogueStr = blockLines.map(l => `[${l.speaker}]: 「${l.text}」`).join('\n');
+    const dialogueStr = blockLines.map(l => {
+      const label = speakerMap?.[l.speaker] || l.speaker;
+      return `[SPEAKER: ${label}]: 「${l.text}」`;
+    }).join('\n');
     return { lines: blockLines, chars, sec, dialogue: dialogueStr };
   });
+}
+
+// ===== SPEAKER LABEL BUILDER =====
+// Creates unambiguous speaker labels so the AI never confuses who is talking
+function buildSpeakerMap(characters, lines) {
+  // Map Japanese speaker names to character IDs with distinguishing traits
+  const map = {};
+  for (const line of lines) {
+    if (map[line.speaker]) continue;
+    // Find matching character by checking if speaker name relates to character ID
+    const char = characters.find(c => {
+      const id = c.id.toLowerCase();
+      const sp = line.speaker.toLowerCase();
+      // Match common patterns
+      return id.includes(sp) || sp.includes(id) ||
+        (sp.includes('新郎') && id.includes('GROOM')) ||
+        (sp.includes('新婦') && id.includes('BRIDE')) ||
+        (sp.includes('父') && (id.includes('FATHER') || id.includes('DAD'))) ||
+        (sp.includes('母') && (id.includes('MOTHER') || id.includes('MOM'))) ||
+        (sp.includes('娘') && (id.includes('DAUGHTER') || id.includes('GIRL'))) ||
+        (sp.includes('息子') && id.includes('SON')) ||
+        (sp.includes('妻') && (id.includes('WIFE') || id.includes('WOMAN'))) ||
+        (sp.includes('夫') && (id.includes('HUSBAND') || id.includes('MAN')));
+    });
+    if (char) {
+      // Extract key identifying features from appearance
+      const genderMatch = char.appearance.match(/\b(male|female|man|woman|boy|girl)\b/i);
+      const ageMatch = char.appearance.match(/\b(early|mid|late)\s+(\d+)s?\b/i);
+      const clothesMatch = char.appearance.match(/wearing\s+([^,.]+)/i);
+      const gender = genderMatch ? genderMatch[0] : '';
+      const age = ageMatch ? `${ageMatch[1]} ${ageMatch[2]}s` : '';
+      const clothes = clothesMatch ? clothesMatch[1].trim().slice(0, 30) : '';
+      map[line.speaker] = `${char.id} (${[gender, age, clothes].filter(Boolean).join(', ')})`;
+    } else {
+      map[line.speaker] = line.speaker;
+    }
+  }
+  return map;
 }
 
 // ===== MAIN GENERATION =====
@@ -63,8 +104,11 @@ export function generatePrompts(theme) {
     `${c.id}: ${c.appearance}`
   ).join('\n');
 
+  // Build speaker map for unambiguous dialogue attribution
+  const speakerMap = buildSpeakerMap(theme.characters, theme.lines);
+
   // Distribute dialogue lines into 3 timing blocks
-  const lineBlocks = distributeLines(theme.lines);
+  const lineBlocks = distributeLines(theme.lines, speakerMap);
 
   // Build scene descriptions with distributed dialogue
   const timings = [[0, 4], [4, 8], [8, 11]];
@@ -84,7 +128,13 @@ export function generatePrompts(theme) {
 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
 All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
-Copy the exact character descriptions below into both parts. Do NOT alter any physical detail.`;
+Copy the exact character descriptions below into both parts. Do NOT alter any physical detail.
+
+#SPEAKER IDENTIFICATION (CRITICAL)
+Each dialogue line is tagged with [SPEAKER: CHARACTER_ID (gender, age, clothing)].
+ALWAYS match the spoken line to the EXACT character described. Do NOT swap speakers.
+Pay special attention to similar roles (e.g., GROOM vs BRIDE, FATHER vs MOTHER).
+The character's GENDER and CLOTHING in the tag must match who is shown speaking on screen.`;
 
   const totalChars = theme.lines.reduce((sum, l) => sum + l.text.length, 0);
   const speechTime = (totalChars / 7).toFixed(1);
