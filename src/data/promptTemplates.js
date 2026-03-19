@@ -43,20 +43,54 @@ function stripDialogue(text) {
     .trim();
 }
 
-// ===== BUILD DIALOGUE BLOCK =====
+// ===== BUILD DIALOGUE BLOCK (Sora2 End-to-End Diffusion optimized) =====
+// Sora2 can't reliably map speaker IDs to visual characters.
+// Instead, we describe each speaker by their VISUAL APPEARANCE directly,
+// and state who is NOT speaking (mouth closed).
 function buildDialogueBlock(lines, characters) {
-  return lines.map(line => {
-    let matchedChar = null;
+  // Build a mapping: for each unique speaker name, assign a character
+  // Use order-based heuristic: first unique speaker → first character, etc.
+  const speakerToChar = {};
+  const usedChars = new Set();
+  const uniqueSpeakers = [...new Set(lines.map(l => l.speaker))];
+
+  for (const sp of uniqueSpeakers) {
+    // Try to find an unused character
     for (const char of characters) {
-      const id = char.id.toLowerCase();
-      const sp = line.speaker.toLowerCase();
-      if (id.includes(sp) || sp.includes(id)) { matchedChar = char; break; }
+      if (!usedChars.has(char.id)) {
+        speakerToChar[sp] = char;
+        usedChars.add(char.id);
+        break;
+      }
     }
-    const tag = matchedChar
-      ? `${matchedChar.id} — ${buildSpeakerTag(matchedChar)}`
-      : line.speaker;
-    return `[SPEAKER: ${tag}]: 「${line.text}」 (${line.text.length}字)`;
-  }).join('\n');
+  }
+
+  return lines.map((line, idx) => {
+    const char = speakerToChar[line.speaker];
+
+    // Extract short visual descriptors from appearance
+    let visualDesc = line.speaker;
+    if (char) {
+      const app = char.appearance;
+      // Get the first sentence of appearance as the most descriptive part
+      const shortDesc = app.split('.').slice(0, 2).join('.').trim();
+      visualDesc = shortDesc.slice(0, 100);
+    }
+
+    // Build list of who is NOT speaking
+    const silentChars = characters
+      .filter(c => c !== char)
+      .map(c => {
+        const shortApp = c.appearance.split(',').slice(0, 2).join(',').trim();
+        return `${c.id} (${shortApp}) — MOUTH CLOSED, silent`;
+      })
+      .join('\n    ');
+
+    return `LINE ${idx + 1}: 「${line.text}」 (${line.text.length}字)
+  WHO IS SPEAKING (mouth OPEN, lips moving): ${visualDesc}
+  WHO IS NOT SPEAKING (mouth CLOSED, no lip movement):
+    ${silentChars}`;
+  }).join('\n\n');
 }
 
 // ===== MAIN GENERATION =====
@@ -89,10 +123,14 @@ No text on screen. No subtitles. No background music. Only dialogue and ambient 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
 All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
 
-#SPEAKER IDENTIFICATION (CRITICAL)
-Each dialogue line is tagged [SPEAKER: ID — gender, age, clothing].
-The person shown speaking MUST match the gender and clothing in the tag.
-Do NOT swap speakers. GROOM ≠ BRIDE. FATHER ≠ MOTHER.`;
+#SPEAKER-TO-VISUAL MAPPING (CRITICAL FOR VIDEO GENERATION)
+This is for an end-to-end diffusion video model. The model must visually show the CORRECT person's mouth moving for each line.
+Rules:
+1. ONLY the character described as "MOUTH IS MOVING" should have lip movement.
+2. ALL other characters listed as "mouths CLOSED" must have STILL, CLOSED lips — no mouth movement at all.
+3. Match the speaker by their VISUAL APPEARANCE (gender, hair, clothing) — not by name.
+4. If two characters look similar (e.g., both female, similar age), use CLOTHING as the primary differentiator.
+5. When in doubt: the character whose CLOTHING matches the speaker description is the one talking.`;
 
   const part1 = `${header}
 
