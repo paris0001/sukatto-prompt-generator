@@ -92,32 +92,38 @@ export function generatePrompts(theme) {
     return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${clean}`;
   }).join('\n\n');
 
-  // Build managed dialogue block from lines[]
-  const dialogueBlock = buildDialogueBlock(theme.lines, theme.characters);
-  const totalChars = theme.lines.reduce((sum, l) => sum + l.text.length, 0);
-  const speechTime = (totalChars / 7).toFixed(1);
+  // Split lines into Part 1 and Part 2
+  const allLines = theme.lines;
+  const splitPoint = Math.ceil(allLines.length / 2);
+  const lines1 = allLines.slice(0, splitPoint);
+  const lines2 = allLines.slice(splitPoint);
+
+  const dialogue1 = buildDialogueBlock(lines1, theme.characters);
+  const dialogue2 = buildDialogueBlock(lines2, theme.characters);
+  const chars1 = lines1.reduce((s, l) => s + l.text.length, 0);
+  const chars2 = lines2.reduce((s, l) => s + l.text.length, 0);
+  const totalChars = chars1 + chars2;
+  const speech1 = (chars1 / 7).toFixed(1);
+  const speech2 = (chars2 / 7).toFixed(1);
 
   const header = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.`;
-
-  const timingNote = `#TIMING (CRITICAL)
-Total duration: 12 seconds per part.
-Scene blocks: 0:00-0:04 / 0:04-0:08 / 0:08-0:11 (visual action + dialogue).
-FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
-Total dialogue: ${totalChars} chars / ~${speechTime}s — must fit within 11 seconds.
-Target: 60-80 chars total across all lines per video.`;
 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
 All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
 
 #SPEAKER IDENTIFICATION (CRITICAL)
-Each line below is tagged [SPEAKER: ID — gender, age, clothing].
+Each dialogue line is tagged [SPEAKER: ID — gender, age, clothing].
 The person shown speaking on screen MUST match the gender and clothing in the tag.
 Do NOT swap speakers. GROOM ≠ BRIDE. FATHER ≠ MOTHER. Check the tag carefully.`;
 
   const part1 = `${header}
 
-${timingNote}
+#TIMING (CRITICAL)
+Total duration: 12 seconds.
+Dialogue window: 0:00-0:11 (11 seconds). Distribute dialogue naturally across the scene.
+FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
+Part 1 dialogue: ${chars1} chars / ~${speech1}s.
 
 ${consistencyNote}
 
@@ -127,19 +133,23 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#VISUAL SCENE (action and staging only — no dialogue here)
+#SCENE (visual action + dialogue together)
 
 ${scene1Lines}
 
 (0:11-0:12) NO DIALOGUE. Silent hold. Character's expression only.
 
-#DIALOGUE (managed, ${totalChars} chars total, distributed across 0:00-0:11)
-${dialogueBlock}`;
+#DIALOGUE FOR THIS PART (${chars1} chars, ${lines1.length} lines — say these lines during the scene above)
+${dialogue1}`;
 
   const part2 = `${header}
 Continuing directly from Part 1.
 
-${timingNote}
+#TIMING (CRITICAL)
+Total duration: 12 seconds.
+Dialogue window: 0:00-0:11 (11 seconds). Distribute dialogue naturally across the scene.
+FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
+Part 2 dialogue: ${chars2} chars / ~${speech2}s.
 
 ${consistencyNote}
 
@@ -149,15 +159,15 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#VISUAL SCENE (action and staging only — no dialogue here)
+#SCENE (visual action + dialogue together)
 
 ${scene2Lines}
 
 (0:11-0:12) NO DIALOGUE. Slow fade to black.
 Text fades in center of screen: 「${theme.endText}」
 
-#DIALOGUE (managed, same lines as in the scene above, distributed across 0:00-0:11)
-The dialogue lines are already embedded in the scene descriptions above. Ensure each speaker matches the tagged character.`;
+#DIALOGUE FOR THIS PART (${chars2} chars, ${lines2.length} lines — say these lines during the scene above)
+${dialogue2}`;
 
   // Build script text for copy
   const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');
@@ -171,6 +181,8 @@ The dialogue lines are already embedded in the scene descriptions above. Ensure 
     meta: {
       lineCount: theme.lines.length,
       totalChars,
+      part1Chars: chars1,
+      part2Chars: chars2,
     },
   };
 }

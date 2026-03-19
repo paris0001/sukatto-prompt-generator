@@ -77,15 +77,20 @@ function PromptOutput({ result, theme }) {
       {/* Script */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2" style={{ background: 'var(--sk-gold-dim)', borderBottom: '1px solid var(--sk-border)' }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold" style={{ color: 'var(--sk-gold)' }}>台本 — {result.meta.lineCount}行</span>
             <span className="text-[10px] px-2 py-0.5 rounded font-bold" style={{
               background: result.meta.totalChars >= 60 && result.meta.totalChars <= 80 ? 'rgba(46,164,79,0.1)' : 'rgba(215,58,73,0.1)',
               color: result.meta.totalChars >= 60 && result.meta.totalChars <= 80 ? 'var(--sk-success)' : 'var(--sk-danger)',
               border: `1px solid ${result.meta.totalChars >= 60 && result.meta.totalChars <= 80 ? 'var(--sk-success)' : 'var(--sk-danger)'}`,
             }}>
-              合計 {result.meta.totalChars}字 / ~{(result.meta.totalChars / 7).toFixed(1)}s {result.meta.totalChars >= 60 && result.meta.totalChars <= 80 ? '✓' : result.meta.totalChars < 60 ? '△短い' : '△長い'}
+              合計 {result.meta.totalChars}字 {result.meta.totalChars >= 60 && result.meta.totalChars <= 80 ? '✓' : result.meta.totalChars < 60 ? '△短い' : '△長い'}
             </span>
+            {result.meta.part1Chars != null && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--sk-text-dim)', border: '1px solid var(--sk-border)' }}>
+                前編{result.meta.part1Chars}字 / 後編{result.meta.part2Chars}字
+              </span>
+            )}
           </div>
           <CopyButton text={result.script} label="COPY 台本" />
         </div>
