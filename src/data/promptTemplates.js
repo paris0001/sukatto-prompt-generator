@@ -24,17 +24,6 @@ const settingDescriptions = {
   "面接室": "Japanese job interview room. Simple desk, two chairs facing each other, company logo on the wall. Formal atmosphere.",
 };
 
-// ===== BUILD SPEAKER TAG =====
-function buildSpeakerTag(char) {
-  const genderMatch = char.appearance.match(/\b(Japanese\s+)?(male|female|man|woman|boy|girl)\b/i);
-  const ageMatch = char.appearance.match(/\b(early|mid|late)\s+(\d+)s?\b/i);
-  const clothesMatch = char.appearance.match(/wearing\s+([^,.]+)/i);
-  const gender = genderMatch ? genderMatch[0].replace(/Japanese\s+/i, '') : '';
-  const age = ageMatch ? `${ageMatch[1]} ${ageMatch[2]}s` : '';
-  const clothes = clothesMatch ? clothesMatch[1].trim().slice(0, 35) : '';
-  return [gender, age, clothes].filter(Boolean).join(', ');
-}
-
 // ===== STRIP ALL DIALOGUE FROM SCENE TEXT =====
 function stripDialogue(text) {
   return text
@@ -43,137 +32,216 @@ function stripDialogue(text) {
     .trim();
 }
 
-// ===== BUILD DIALOGUE BLOCK (Sora2 End-to-End Diffusion optimized) =====
-// Sora2 can't reliably map speaker IDs to visual characters.
-// Instead, we describe each speaker by their VISUAL APPEARANCE directly,
-// and state who is NOT speaking (mouth closed).
-function buildDialogueBlock(lines, characters) {
-  // Build a mapping: for each unique speaker name, assign a character
-  // Use order-based heuristic: first unique speaker → first character, etc.
+// ===== BUILD SPEAKER LABEL (visual description for Sora2) =====
+function buildSpeakerLabel(char) {
+  if (!char) return 'Unknown';
+  const app = char.appearance;
+  // Extract: gender+age, hair, clothing — the 3 most visually distinctive traits
+  const genderAge = app.match(/Japanese\s+(male|female|man|woman|boy|girl),?\s*(early|mid|late)?\s*(\d+)/i);
+  const hairMatch = app.match(/(short|long|shoulder-length|cropped|styled|slicked|dyed-?brown|grey|silver|black|ponytail|bald|buzz)[^,.]*hair/i);
+  const clothesMatch = app.match(/wearing\s+([^.]+)/i);
+
+  const parts = [];
+  if (genderAge) parts.push(genderAge[0].replace(/Japanese\s+/i, ''));
+  if (hairMatch) parts.push(hairMatch[0].trim());
+  if (clothesMatch) parts.push(clothesMatch[1].trim().slice(0, 40));
+  return parts.join(', ') || app.slice(0, 80);
+}
+
+// ===== KEYWORD MAP for Japanese speaker → English character ID =====
+const speakerKeywords = {
+  '客': ['CUSTOMER', 'RUDE', 'MAN', 'ARROGANT', 'KNOW', 'CRITIC', 'CASUAL'],
+  '男性客': ['RUDE', 'MAN', 'ARROGANT', 'CUSTOMER'],
+  '女性客': ['WOMAN', 'FEMALE', 'CUSTOMER', 'KAREN'],
+  '店員': ['CLERK', 'STAFF', 'WORKER'],
+  '店長': ['MANAGER'],
+  'オーナー': ['OWNER'],
+  '社長': ['CEO', 'PRESIDENT'],
+  '部長': ['DEPARTMENT', 'HEAD', 'DIRECTOR'],
+  '課長': ['SECTION', 'CHIEF'],
+  '上司': ['BOSS', 'SUPERIOR'],
+  '部下': ['SUBORDINATE', 'WORKER'],
+  '社員': ['EMPLOYEE', 'STAFF', 'WORKER'],
+  '新人': ['ROOKIE', 'NEWBIE', 'NEW', 'STUDENT'],
+  '先輩': ['SENIOR', 'SENPAI'],
+  '後輩': ['JUNIOR', 'KOHAI'],
+  '同僚': ['COLLEAGUE', 'COWORKER'],
+  '運転手': ['DRIVER'],
+  '医師': ['DOCTOR', 'EXPERT', 'WORLD'],
+  '看護師': ['NURSE'],
+  '患者': ['PATIENT', 'KNOW_IT'],
+  '弁護士': ['LAWYER', 'ATTORNEY'],
+  '警察': ['POLICE', 'OFFICER', 'COP'],
+  '校長': ['PRINCIPAL'],
+  '先生': ['TEACHER', 'SENSEI'],
+  '生徒': ['STUDENT'],
+  '母': ['MOTHER', 'MOM', 'MAMA'],
+  '母親': ['MOTHER', 'MOM'],
+  '父': ['FATHER', 'DAD', 'PAPA'],
+  '父親': ['FATHER', 'DAD'],
+  '娘': ['DAUGHTER', 'GIRL'],
+  '息子': ['SON', 'BOY'],
+  '妻': ['WIFE'],
+  '夫': ['HUSBAND'],
+  '嫁': ['WIFE', 'BRIDE', 'DAUGHTER_IN_LAW'],
+  '姑': ['MOTHER_IN_LAW', 'MIL'],
+  '義姉': ['SISTER_IN_LAW'],
+  '新郎': ['GROOM'],
+  '新婦': ['BRIDE'],
+  '婚約者': ['FIANCE', 'PARTNER'],
+  '老人': ['OLD', 'ELDERLY', 'SENIOR'],
+  '老婦人': ['ELDERLY_WOMAN', 'OLD_WOMAN'],
+  '常連': ['REGULAR'],
+  '保健所': ['HEALTH'],
+  '人事': ['HR'],
+  '面接官': ['INTERVIEWER'],
+  '録音': ['RECORDING'],
+  'シェフ': ['CHEF', 'COOK'],
+  '板前': ['CHEF', 'COOK'],
+  'パート': ['PART_TIMER', 'WORKER'],
+  '派遣': ['TEMP', 'DISPATCH'],
+  '営業': ['SALES'],
+  'ソムリエ': ['SOMMELIER'],
+  'インターン': ['INTERN'],
+  '受付': ['RECEPTIONIST', 'FRONT'],
+  '担当者': ['REPRESENTATIVE', 'MANAGER'],
+  '被害者': ['VICTIM'],
+  'サラリーマン': ['BUSINESSMAN', 'SALARY'],
+  '司会': ['MC', 'HOST', 'EMCEE'],
+  'スタッフ': ['STAFF'],
+  '取締役': ['DIRECTOR', 'EXECUTIVE', 'CLEANER'],
+  '女性': ['WOMAN', 'FEMALE', 'LADY'],
+  '男': ['MAN', 'MALE', 'GUY'],
+  '男性': ['MAN', 'MALE'],
+  '孫': ['GRANDCHILD', 'GRANDSON'],
+  'おばあちゃん': ['GRANDMOTHER', 'ELDERLY'],
+  'おじいちゃん': ['GRANDFATHER', 'OLD'],
+};
+
+// ===== BUILD SPEAKER MAP (keyword-based matching) =====
+function buildSpeakerMap(allLines, characters) {
   const speakerToChar = {};
   const usedChars = new Set();
-  const uniqueSpeakers = [...new Set(lines.map(l => l.speaker))];
+  const uniqueSpeakers = [...new Set(allLines.map(l => l.speaker))];
 
   for (const sp of uniqueSpeakers) {
-    // Try to find an unused character
+    let bestChar = null;
+    let bestScore = 0;
+
+    // Try keyword matching
+    const keywords = speakerKeywords[sp] || [sp.toUpperCase()];
+
     for (const char of characters) {
-      if (!usedChars.has(char.id)) {
-        speakerToChar[sp] = char;
-        usedChars.add(char.id);
-        break;
+      if (usedChars.has(char.id)) continue;
+      const charIdUpper = char.id.toUpperCase();
+      let score = 0;
+      for (const kw of keywords) {
+        if (charIdUpper.includes(kw.toUpperCase())) {
+          score += 10;
+        }
       }
+      // Also check if speaker name appears in character appearance text
+      if (char.appearance.toLowerCase().includes(sp.toLowerCase())) {
+        score += 5;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestChar = char;
+      }
+    }
+
+    // Fallback: assign first unused character
+    if (!bestChar) {
+      for (const char of characters) {
+        if (!usedChars.has(char.id)) {
+          bestChar = char;
+          break;
+        }
+      }
+    }
+
+    if (bestChar) {
+      speakerToChar[sp] = bestChar;
+      usedChars.add(bestChar.id);
     }
   }
 
-  return lines.map((line, idx) => {
+  return speakerToChar;
+}
+
+// ===== BUILD SORA2 OFFICIAL DIALOGUE BLOCK =====
+// Format: Dialogue:\n- SpeakerVisualDesc: "セリフ"
+function buildDialogueBlock(lines, speakerToChar) {
+  const dialogueLines = lines.map(line => {
     const char = speakerToChar[line.speaker];
+    const label = char ? buildSpeakerLabel(char) : line.speaker;
+    return `- ${label}: "${line.text}"`;
+  }).join('\n');
 
-    // Extract short visual descriptors from appearance
-    let visualDesc = line.speaker;
-    if (char) {
-      const app = char.appearance;
-      // Get the first sentence of appearance as the most descriptive part
-      const shortDesc = app.split('.').slice(0, 2).join('.').trim();
-      visualDesc = shortDesc.slice(0, 100);
-    }
-
-    // Build list of who is NOT speaking
-    const silentChars = characters
-      .filter(c => c !== char)
-      .map(c => {
-        const shortApp = c.appearance.split(',').slice(0, 2).join(',').trim();
-        return `${c.id} (${shortApp}) — MOUTH CLOSED, silent`;
-      })
-      .join('\n    ');
-
-    return `LINE ${idx + 1}: 「${line.text}」 (${line.text.length}字)
-  WHO IS SPEAKING (mouth OPEN, lips moving): ${visualDesc}
-  WHO IS NOT SPEAKING (mouth CLOSED, no lip movement):
-    ${silentChars}`;
-  }).join('\n\n');
+  return `Dialogue:\n${dialogueLines}`;
 }
 
 // ===== MAIN GENERATION =====
 export function generatePrompts(theme) {
   const setting = settingDescriptions[theme.setting] || settingDescriptions["オフィス"];
+
+  // Character descriptions
   const charBlock = theme.characters.map(c => `${c.id}: ${c.appearance}`).join('\n');
 
-  // Use lines1/lines2 if available, otherwise fall back to splitting lines[]
+  // Split lines into Part 1 / Part 2
   const lines1 = theme.lines1 || theme.lines.slice(0, Math.ceil(theme.lines.length / 2));
   const lines2 = theme.lines2 || theme.lines.slice(Math.ceil(theme.lines.length / 2));
 
-  const dialogue1 = buildDialogueBlock(lines1, theme.characters);
-  const dialogue2 = buildDialogueBlock(lines2, theme.characters);
   const chars1 = lines1.reduce((s, l) => s + l.text.length, 0);
   const chars2 = lines2.reduce((s, l) => s + l.text.length, 0);
 
+  // Build consistent speaker map from ALL lines, then use it for both parts
+  const allLinesForMap = [...lines1, ...lines2];
+  const speakerToChar = buildSpeakerMap(allLinesForMap, theme.characters);
+
+  // Build Sora2 official format dialogue blocks
+  const dialogue1 = buildDialogueBlock(lines1, speakerToChar);
+  const dialogue2 = buildDialogueBlock(lines2, speakerToChar);
+
+  // Build visual scene descriptions (dialogue stripped out)
   const timings = [[0, 4], [4, 8], [8, 11]];
-  const scene1Lines = theme.scene1.map((s, i) => {
+  const buildSceneBlock = (scenes) => scenes.map((s, i) => {
     const [ts, te] = timings[i];
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${stripDialogue(s)}`;
-  }).join('\n\n');
-  const scene2Lines = theme.scene2.map((s, i) => {
-    const [ts, te] = timings[i];
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${stripDialogue(s)}`;
+    return `(0:${String(ts).padStart(2,'0')}-0:${String(te).padStart(2,'0')}) ${stripDialogue(s)}`;
   }).join('\n\n');
 
-  const header = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
-No text on screen. No subtitles. No background music. Only dialogue and ambient sound.`;
+  const scene1Text = buildSceneBlock(theme.scene1);
+  const scene2Text = buildSceneBlock(theme.scene2);
 
-  const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
-All characters must have IDENTICAL face, hair, skin tone, body type, and clothing between Part 1 and Part 2.
+  // ===== PART 1 PROMPT (Sora2 official format) =====
+  const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. 12 seconds. No background music.
 
-#SPEAKER-TO-VISUAL MAPPING (CRITICAL FOR VIDEO GENERATION)
-This is for an end-to-end diffusion video model. The model must visually show the CORRECT person's mouth moving for each line.
-Rules:
-1. ONLY the character described as "MOUTH IS MOVING" should have lip movement.
-2. ALL other characters listed as "mouths CLOSED" must have STILL, CLOSED lips — no mouth movement at all.
-3. Match the speaker by their VISUAL APPEARANCE (gender, hair, clothing) — not by name.
-4. If two characters look similar (e.g., both female, similar age), use CLOTHING as the primary differentiator.
-5. When in doubt: the character whose CLOTHING matches the speaker description is the one talking.`;
-
-  const part1 = `${header}
-
-#TIMING: 12 seconds total. Dialogue: 0:00-0:11. FINAL 1s (0:11-0:12): NO DIALOGUE.
-Part 1 dialogue: ${chars1} chars / ~${(chars1/7).toFixed(1)}s. Target: 60-80 chars.
-
-${consistencyNote}
-
-#CHARACTERS (IDENTICAL in Part 1 and Part 2)
+Characters (identical in Part 1 and Part 2):
 ${charBlock}
 
-#SETTING
 ${setting}
 
-#SCENE
-${scene1Lines}
-(0:11-0:12) NO DIALOGUE. Silent hold.
+${scene1Text}
 
-#DIALOGUE FOR PART 1 (${chars1} chars, ${lines1.length} lines)
+(0:11-0:12) Silent hold. No dialogue. Character's expression only.
+
 ${dialogue1}`;
 
-  const part2 = `${header}
-Continuing directly from Part 1.
+  // ===== PART 2 PROMPT (Sora2 official format) =====
+  const part2 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. 12 seconds. No background music. Continuing directly from Part 1.
 
-#TIMING: 12 seconds total. Dialogue: 0:00-0:11. FINAL 1s (0:11-0:12): NO DIALOGUE.
-Part 2 dialogue: ${chars2} chars / ~${(chars2/7).toFixed(1)}s. Target: 60-80 chars.
-
-${consistencyNote}
-
-#CHARACTERS (IDENTICAL to Part 1 — same face, same hair, same clothes)
+Characters (identical to Part 1 — same face, same hair, same clothes):
 ${charBlock}
 
-#SETTING
 ${setting}
 
-#SCENE
-${scene2Lines}
-(0:11-0:12) NO DIALOGUE. Slow fade to black.
-Text fades in center of screen: 「${theme.endText}」
+${scene2Text}
 
-#DIALOGUE FOR PART 2 (${chars2} chars, ${lines2.length} lines)
+(0:11-0:12) Silent. Slow fade to black. Text fades in: 「${theme.endText}」
+
 ${dialogue2}`;
 
+  // Build copy-friendly script
   const allLines = [...lines1, ...lines2];
   const scriptText = allLines.map(l => `${l.speaker}「${l.text}」`).join('\n');
 
