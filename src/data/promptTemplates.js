@@ -33,27 +33,16 @@ export function generatePrompts(theme) {
     `${c.id}: ${c.appearance}`
   ).join('\n');
 
-  // Build scene descriptions with timing: 0-4s, 4-8s, 8-11s (last block has NO dialogue)
+  // Build scene descriptions with timing: 0-4s, 4-8s, 8-11s (dialogue OK in all three)
   const timings = [[0, 4], [4, 8], [8, 11]];
   const scene1Lines = theme.scene1.map((s, i) => {
     const [ts, te] = timings[i] || [8, 11];
-    // Strip any dialogue from the last block (8-11s) - dialogue must end by 0:08
-    let text = s;
-    if (i === 2) {
-      text = text.replace(/\n?\[.*?\].*?「.*?」/g, '').trim();
-      if (!text) text = "Silent reaction. Characters process what just happened. No dialogue. Only ambient sound and facial expressions.";
-    }
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${text}`;
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}`;
   }).join('\n\n');
 
   const scene2Lines = theme.scene2.map((s, i) => {
     const [ts, te] = timings[i] || [8, 11];
-    let text = s;
-    if (i === 2) {
-      text = text.replace(/\n?\[.*?\].*?「.*?」/g, '').trim();
-      if (!text) text = "Silent reaction. Characters process what just happened. No dialogue. Only ambient sound and facial expressions.";
-    }
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${text}`;
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${s}`;
   }).join('\n\n');
 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
@@ -65,11 +54,9 @@ Copy the exact character descriptions below into both parts. Do NOT alter any ph
 
   const timingNote = `#TIMING (CRITICAL)
 Total duration: 12 seconds per part.
-Dialogue window: 0:00-0:08 ONLY. All spoken lines must finish by the 8-second mark.
-Silent reaction: 0:08-0:11. No dialogue. Show character reactions through facial expressions only.
-Final beat: 0:11-0:12. Complete silence. Hold or fade.
-Dialogue total: ${totalChars} chars / ~${speechTime}s of speech.
-RULE: NO DIALOGUE AFTER 0:08. The last 4 seconds are purely visual.`;
+Dialogue window: 0:00-0:11. All spoken lines must finish by 0:11.
+FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold. Only ambient sound.
+Dialogue total: ${totalChars} chars / ~${speechTime}s of speech.`;
 
   const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.
@@ -84,11 +71,11 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (Dialogue: 0:00-0:08 | Silent reaction: 0:08-0:11 | Final beat: 0:11-0:12)
+#SCENE (Dialogue: 0:00-0:11 | Silent: 0:11-0:12)
 
 ${scene1Lines}
 
-(0:11-0:12) FINAL BEAT: Complete silence. Hold on character's face. No dialogue. Only ambient sound.`;
+(0:11-0:12) NO DIALOGUE. Silent hold. Character's expression only. Ambient sound.`;
 
   const part2 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story. Continuing directly from Part 1.
 No text on screen except final message. No subtitles. No background music.
@@ -103,11 +90,11 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (Dialogue: 0:00-0:08 | Silent reaction: 0:08-0:11 | Final beat: 0:11-0:12)
+#SCENE (Dialogue: 0:00-0:11 | Silent: 0:11-0:12)
 
 ${scene2Lines}
 
-(0:11-0:12) FINAL BEAT: No dialogue. Complete silence. Slow fade to black.
+(0:11-0:12) NO DIALOGUE. Complete silence. Slow fade to black.
 Text fades in center of screen: 「${theme.endText}」`;
 
   // Build script text
