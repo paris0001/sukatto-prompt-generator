@@ -33,17 +33,27 @@ export function generatePrompts(theme) {
     `${c.id}: ${c.appearance}`
   ).join('\n');
 
-  // Build scene descriptions
+  // Build scene descriptions with timing: 0-4s, 4-8s, 8-11s (last block has NO dialogue)
+  const timings = [[0, 4], [4, 8], [8, 11]];
   const scene1Lines = theme.scene1.map((s, i) => {
-    const timeStart = i * 4;
-    const timeEnd = (i + 1) * 4;
-    return `(${String(timeStart).padStart(1, '0')}:${String(timeStart).padStart(2, '0')}-${String(timeEnd).padStart(1, '0')}:${String(timeEnd).padStart(2, '0')}) ${s}`;
+    const [ts, te] = timings[i] || [8, 11];
+    // Strip any dialogue from the last block (8-11s) - dialogue must end by 0:08
+    let text = s;
+    if (i === 2) {
+      text = text.replace(/\n?\[.*?\].*?「.*?」/g, '').trim();
+      if (!text) text = "Silent reaction. Characters process what just happened. No dialogue. Only ambient sound and facial expressions.";
+    }
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${text}`;
   }).join('\n\n');
 
   const scene2Lines = theme.scene2.map((s, i) => {
-    const timeStart = i * 4;
-    const timeEnd = (i + 1) * 4;
-    return `(${String(timeStart).padStart(1, '0')}:${String(timeStart).padStart(2, '0')}-${String(timeEnd).padStart(1, '0')}:${String(timeEnd).padStart(2, '0')}) ${s}`;
+    const [ts, te] = timings[i] || [8, 11];
+    let text = s;
+    if (i === 2) {
+      text = text.replace(/\n?\[.*?\].*?「.*?」/g, '').trim();
+      if (!text) text = "Silent reaction. Characters process what just happened. No dialogue. Only ambient sound and facial expressions.";
+    }
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${text}`;
   }).join('\n\n');
 
   const consistencyNote = `#CHARACTER CONSISTENCY (CRITICAL)
@@ -53,10 +63,13 @@ Copy the exact character descriptions below into both parts. Do NOT alter any ph
   const totalChars = theme.lines.reduce((sum, l) => sum + l.text.length, 0);
   const speechTime = (totalChars / 7).toFixed(1);
 
-  const timingNote = `#TIMING
-Total duration: 12 seconds per part. Dialogue target: 60-80 chars total across all lines.
-Current dialogue: ${totalChars} chars / ~${speechTime}s of speech.
-FINAL 1 SECOND: NO DIALOGUE. Silent reaction shot. Only ambient sound.`;
+  const timingNote = `#TIMING (CRITICAL)
+Total duration: 12 seconds per part.
+Dialogue window: 0:00-0:08 ONLY. All spoken lines must finish by the 8-second mark.
+Silent reaction: 0:08-0:11. No dialogue. Show character reactions through facial expressions only.
+Final beat: 0:11-0:12. Complete silence. Hold or fade.
+Dialogue total: ${totalChars} chars / ~${speechTime}s of speech.
+RULE: NO DIALOGUE AFTER 0:08. The last 4 seconds are purely visual.`;
 
   const part1 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.
@@ -71,11 +84,11 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (0:00-0:11 active, 0:11-0:12 silent)
+#SCENE (Dialogue: 0:00-0:08 | Silent reaction: 0:08-0:11 | Final beat: 0:11-0:12)
 
 ${scene1Lines}
 
-FINAL 1 SECOND (0:11-0:12): No dialogue. Hold on character's face. Silent reaction. Only ambient sound.`;
+(0:11-0:12) FINAL BEAT: Complete silence. Hold on character's face. No dialogue. Only ambient sound.`;
 
   const part2 = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story. Continuing directly from Part 1.
 No text on screen except final message. No subtitles. No background music.
@@ -90,11 +103,11 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (0:00-0:11 active, 0:11-0:12 silent)
+#SCENE (Dialogue: 0:00-0:08 | Silent reaction: 0:08-0:11 | Final beat: 0:11-0:12)
 
 ${scene2Lines}
 
-FINAL 1 SECOND (0:11-0:12): No dialogue. Slow fade to black. Complete silence.
+(0:11-0:12) FINAL BEAT: No dialogue. Complete silence. Slow fade to black.
 Text fades in center of screen: 「${theme.endText}」`;
 
   // Build script text
