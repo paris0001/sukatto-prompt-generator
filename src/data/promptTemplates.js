@@ -36,7 +36,6 @@ function buildSpeakerTag(char) {
 }
 
 // ===== STRIP ALL DIALOGUE FROM SCENE TEXT =====
-// Remove lines like [SPEAKER]: 「...」 or [SPEAKER, modifier]: 「...」
 function stripDialogue(text) {
   return text
     .replace(/\n?\[.*?\](?:,\s*[^:]*)?:\s*「[^」]*」/g, '')
@@ -44,24 +43,14 @@ function stripDialogue(text) {
     .trim();
 }
 
-// ===== BUILD DIALOGUE BLOCK FROM LINES =====
+// ===== BUILD DIALOGUE BLOCK =====
 function buildDialogueBlock(lines, characters) {
-  // Map speaker names to characters for detailed tags
-  const charMap = {};
-  for (const char of characters) {
-    charMap[char.id] = char;
-  }
-
   return lines.map(line => {
-    // Find matching character
     let matchedChar = null;
     for (const char of characters) {
       const id = char.id.toLowerCase();
-      const sp = line.speaker;
-      if (id.includes(sp) || sp.includes(id)) {
-        matchedChar = char;
-        break;
-      }
+      const sp = line.speaker.toLowerCase();
+      if (id.includes(sp) || sp.includes(id)) { matchedChar = char; break; }
     }
     const tag = matchedChar
       ? `${matchedChar.id} — ${buildSpeakerTag(matchedChar)}`
@@ -73,38 +62,26 @@ function buildDialogueBlock(lines, characters) {
 // ===== MAIN GENERATION =====
 export function generatePrompts(theme) {
   const setting = settingDescriptions[theme.setting] || settingDescriptions["オフィス"];
-
-  // Build character descriptions
   const charBlock = theme.characters.map(c => `${c.id}: ${c.appearance}`).join('\n');
 
-  // Strip ALL dialogue from scene descriptions — dialogue comes ONLY from lines[]
-  const timings = [[0, 4], [4, 8], [8, 11]];
-
-  const scene1Lines = theme.scene1.map((s, i) => {
-    const [ts, te] = timings[i];
-    const clean = stripDialogue(s);
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${clean}`;
-  }).join('\n\n');
-
-  const scene2Lines = theme.scene2.map((s, i) => {
-    const [ts, te] = timings[i];
-    const clean = stripDialogue(s);
-    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${clean}`;
-  }).join('\n\n');
-
-  // Split lines into Part 1 and Part 2
-  const allLines = theme.lines;
-  const splitPoint = Math.ceil(allLines.length / 2);
-  const lines1 = allLines.slice(0, splitPoint);
-  const lines2 = allLines.slice(splitPoint);
+  // Use lines1/lines2 if available, otherwise fall back to splitting lines[]
+  const lines1 = theme.lines1 || theme.lines.slice(0, Math.ceil(theme.lines.length / 2));
+  const lines2 = theme.lines2 || theme.lines.slice(Math.ceil(theme.lines.length / 2));
 
   const dialogue1 = buildDialogueBlock(lines1, theme.characters);
   const dialogue2 = buildDialogueBlock(lines2, theme.characters);
   const chars1 = lines1.reduce((s, l) => s + l.text.length, 0);
   const chars2 = lines2.reduce((s, l) => s + l.text.length, 0);
-  const totalChars = chars1 + chars2;
-  const speech1 = (chars1 / 7).toFixed(1);
-  const speech2 = (chars2 / 7).toFixed(1);
+
+  const timings = [[0, 4], [4, 8], [8, 11]];
+  const scene1Lines = theme.scene1.map((s, i) => {
+    const [ts, te] = timings[i];
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${stripDialogue(s)}`;
+  }).join('\n\n');
+  const scene2Lines = theme.scene2.map((s, i) => {
+    const [ts, te] = timings[i];
+    return `(0:${String(ts).padStart(2, '0')}-0:${String(te).padStart(2, '0')}) ${stripDialogue(s)}`;
+  }).join('\n\n');
 
   const header = `Cinematic short drama, 9:16 vertical, 4K, photorealistic, dramatic lighting, Japanese contemporary setting. Emotional dramatic twist story.
 No text on screen. No subtitles. No background music. Only dialogue and ambient sound.`;
@@ -114,16 +91,13 @@ All characters must have IDENTICAL face, hair, skin tone, body type, and clothin
 
 #SPEAKER IDENTIFICATION (CRITICAL)
 Each dialogue line is tagged [SPEAKER: ID — gender, age, clothing].
-The person shown speaking on screen MUST match the gender and clothing in the tag.
-Do NOT swap speakers. GROOM ≠ BRIDE. FATHER ≠ MOTHER. Check the tag carefully.`;
+The person shown speaking MUST match the gender and clothing in the tag.
+Do NOT swap speakers. GROOM ≠ BRIDE. FATHER ≠ MOTHER.`;
 
   const part1 = `${header}
 
-#TIMING (CRITICAL)
-Total duration: 12 seconds.
-Dialogue window: 0:00-0:11 (11 seconds). Distribute dialogue naturally across the scene.
-FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
-Part 1 dialogue: ${chars1} chars / ~${speech1}s.
+#TIMING: 12 seconds total. Dialogue: 0:00-0:11. FINAL 1s (0:11-0:12): NO DIALOGUE.
+Part 1 dialogue: ${chars1} chars / ~${(chars1/7).toFixed(1)}s. Target: 60-80 chars.
 
 ${consistencyNote}
 
@@ -133,23 +107,18 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (visual action + dialogue together)
-
+#SCENE
 ${scene1Lines}
+(0:11-0:12) NO DIALOGUE. Silent hold.
 
-(0:11-0:12) NO DIALOGUE. Silent hold. Character's expression only.
-
-#DIALOGUE FOR THIS PART (${chars1} chars, ${lines1.length} lines — say these lines during the scene above)
+#DIALOGUE FOR PART 1 (${chars1} chars, ${lines1.length} lines)
 ${dialogue1}`;
 
   const part2 = `${header}
 Continuing directly from Part 1.
 
-#TIMING (CRITICAL)
-Total duration: 12 seconds.
-Dialogue window: 0:00-0:11 (11 seconds). Distribute dialogue naturally across the scene.
-FINAL 1 SECOND (0:11-0:12): ABSOLUTELY NO DIALOGUE. Silent hold only.
-Part 2 dialogue: ${chars2} chars / ~${speech2}s.
+#TIMING: 12 seconds total. Dialogue: 0:00-0:11. FINAL 1s (0:11-0:12): NO DIALOGUE.
+Part 2 dialogue: ${chars2} chars / ~${(chars2/7).toFixed(1)}s. Target: 60-80 chars.
 
 ${consistencyNote}
 
@@ -159,28 +128,26 @@ ${charBlock}
 #SETTING
 ${setting}
 
-#SCENE (visual action + dialogue together)
-
+#SCENE
 ${scene2Lines}
-
 (0:11-0:12) NO DIALOGUE. Slow fade to black.
 Text fades in center of screen: 「${theme.endText}」
 
-#DIALOGUE FOR THIS PART (${chars2} chars, ${lines2.length} lines — say these lines during the scene above)
+#DIALOGUE FOR PART 2 (${chars2} chars, ${lines2.length} lines)
 ${dialogue2}`;
 
-  // Build script text for copy
-  const scriptText = theme.lines.map(l => `${l.speaker}「${l.text}」`).join('\n');
+  const allLines = [...lines1, ...lines2];
+  const scriptText = allLines.map(l => `${l.speaker}「${l.text}」`).join('\n');
 
   return {
-    part1,
-    part2,
+    part1, part2,
     script: scriptText,
-    lines: theme.lines,
+    lines: allLines,
+    lines1, lines2,
     endText: theme.endText,
     meta: {
-      lineCount: theme.lines.length,
-      totalChars,
+      lineCount: allLines.length,
+      totalChars: chars1 + chars2,
       part1Chars: chars1,
       part2Chars: chars2,
     },
