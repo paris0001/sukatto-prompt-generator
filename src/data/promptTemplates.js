@@ -181,6 +181,11 @@ function buildDialogueBlock(lines, speakerToChar) {
   return `Dialogue:\n${dialogueLines}`;
 }
 
+// ===== PICK RANDOM FROM ARRAY =====
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 // ===== MAIN GENERATION =====
 export function generatePrompts(theme) {
   const setting = settingDescriptions[theme.setting] || settingDescriptions["オフィス"];
@@ -188,9 +193,20 @@ export function generatePrompts(theme) {
   // Character descriptions
   const charBlock = theme.characters.map(c => `${c.id}: ${c.appearance}`).join('\n');
 
-  // Split lines into Part 1 / Part 2
-  const lines1 = theme.lines1 || theme.lines.slice(0, Math.ceil(theme.lines.length / 2));
-  const lines2 = theme.lines2 || theme.lines.slice(Math.ceil(theme.lines.length / 2));
+  // Pick from line variations if available, otherwise use default
+  let lines1, lines2;
+  if (theme.lines1Alts && theme.lines1Alts.length > 0) {
+    const allLines1 = [theme.lines1 || theme.lines.slice(0, Math.ceil(theme.lines.length / 2)), ...theme.lines1Alts];
+    lines1 = pickRandom(allLines1);
+  } else {
+    lines1 = theme.lines1 || theme.lines.slice(0, Math.ceil(theme.lines.length / 2));
+  }
+  if (theme.lines2Alts && theme.lines2Alts.length > 0) {
+    const allLines2 = [theme.lines2 || theme.lines.slice(Math.ceil(theme.lines.length / 2)), ...theme.lines2Alts];
+    lines2 = pickRandom(allLines2);
+  } else {
+    lines2 = theme.lines2 || theme.lines.slice(Math.ceil(theme.lines.length / 2));
+  }
 
   const chars1 = lines1.reduce((s, l) => s + l.text.length, 0);
   const chars2 = lines2.reduce((s, l) => s + l.text.length, 0);

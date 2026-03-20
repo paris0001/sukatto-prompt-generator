@@ -1,4 +1,5 @@
 import { themes_56_100 } from './themes_56_100.js';
+import { lineVariations } from './lineVariations.js';
 
 // Each theme has:
 // - id, title (internal), category (matches categories.js id)
@@ -2164,10 +2165,32 @@ const _themes = [
   },
 ];
 
-export const themes = [..._themes, ...themes_56_100];
+// Merge line variations into themes
+const _allThemes = [..._themes, ...themes_56_100];
+for (const t of _allThemes) {
+  const v = lineVariations[t.id];
+  if (v) {
+    if (v.lines1Alts) t.lines1Alts = v.lines1Alts;
+    if (v.lines2Alts) t.lines2Alts = v.lines2Alts;
+  }
+}
+export const themes = _allThemes;
+
+// Track recently used theme IDs to avoid repetition
+const _recentIds = [];
+const _RECENT_LIMIT = Math.min(30, Math.floor(themes.length * 0.3));
 
 export function getRandomTheme() {
-  const t = themes[Math.floor(Math.random() * themes.length)];
+  // Filter out recently used themes
+  let pool = themes.filter(t => !_recentIds.includes(t.id));
+  // If pool is too small, reset history
+  if (pool.length < 5) {
+    _recentIds.length = 0;
+    pool = themes;
+  }
+  const t = pool[Math.floor(Math.random() * pool.length)];
+  _recentIds.push(t.id);
+  if (_recentIds.length > _RECENT_LIMIT) _recentIds.shift();
   return t;
 }
 

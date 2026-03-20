@@ -134,23 +134,33 @@ function PromptOutput({ result, theme }) {
   )
 }
 
-function TitleHistory({ history }) {
+function HistoryPanel({ history }) {
+  const [expandedIndex, setExpandedIndex] = useState(null)
   if (!history.length) return null
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--sk-border)' }}>
-        <span className="text-xs font-bold" style={{ color: 'var(--sk-text)' }}>タイトル履歴 ({history.length}/10)</span>
+        <span className="text-xs font-bold" style={{ color: 'var(--sk-text)' }}>過去の生成結果 ({history.length}/5)</span>
+        <span className="text-[10px]" style={{ color: 'var(--sk-text-dim)' }}>タップで展開</span>
       </div>
       <div>
         {history.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 px-4 py-2 text-xs"
-            style={{ borderBottom: '1px solid var(--sk-border)' }}
-          >
-            <span className="shrink-0 w-5 text-center" style={{ color: 'var(--sk-text-light)' }}>{i + 1}</span>
-            <p className="flex-1 leading-relaxed" style={{ color: 'var(--sk-text)' }}>{item.theme.ytTitle}</p>
-            <CopyButton text={item.theme.ytTitle} label="COPY" />
+          <div key={i}>
+            <div
+              className="flex items-center gap-2 px-4 py-2 text-xs cursor-pointer hover:bg-black/[0.02] transition"
+              style={{ borderBottom: expandedIndex === i ? 'none' : '1px solid var(--sk-border)' }}
+              onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
+            >
+              <span className="shrink-0 w-5 text-center font-bold" style={{ color: expandedIndex === i ? 'var(--sk-primary)' : 'var(--sk-text-light)' }}>{i + 1}</span>
+              <span className="shrink-0 text-[10px]" style={{ color: 'var(--sk-text-dim)' }}>{expandedIndex === i ? '▼' : '▶'}</span>
+              <p className="flex-1 leading-relaxed truncate" style={{ color: 'var(--sk-text)' }}>{item.theme.ytTitle}</p>
+              <CopyButton text={item.theme.ytTitle} label="COPY" />
+            </div>
+            {expandedIndex === i && (
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--sk-border)', background: 'rgba(0,0,0,0.015)' }}>
+                <PromptOutput result={item.result} theme={item.theme} />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -162,13 +172,15 @@ function App() {
   const [selectedTheme, setSelectedTheme] = useState(null)
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState([])
+  const [tab, setTab] = useState('latest')
 
   const handleRandom = useCallback(() => {
     const theme = getRandomTheme()
     const r = generatePrompts(theme)
     setSelectedTheme(theme)
     setResult(r)
-    setHistory(prev => [{ theme, result: r }, ...prev].slice(0, 10))
+    setHistory(prev => [{ theme, result: r }, ...prev].slice(0, 5))
+    setTab('latest')
   }, [])
 
   return (
@@ -188,6 +200,31 @@ function App() {
             🎲 生成
           </button>
         </div>
+        {/* Tab bar */}
+        {result && (
+          <div className="max-w-3xl mx-auto px-4 flex gap-0" style={{ borderTop: '1px solid var(--sk-border)' }}>
+            <button
+              onClick={() => setTab('latest')}
+              className="flex-1 py-2 text-xs font-bold transition"
+              style={{
+                color: tab === 'latest' ? 'var(--sk-primary)' : 'var(--sk-text-dim)',
+                borderBottom: tab === 'latest' ? '2px solid var(--sk-primary)' : '2px solid transparent',
+              }}
+            >
+              最新の生成結果
+            </button>
+            <button
+              onClick={() => setTab('history')}
+              className="flex-1 py-2 text-xs font-bold transition relative"
+              style={{
+                color: tab === 'history' ? 'var(--sk-primary)' : 'var(--sk-text-dim)',
+                borderBottom: tab === 'history' ? '2px solid var(--sk-primary)' : '2px solid transparent',
+              }}
+            >
+              履歴（{history.length}件）
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-5 space-y-4">
@@ -200,13 +237,19 @@ function App() {
           </div>
         )}
 
-        {/* Output */}
-        {result && selectedTheme && (
+        {/* Latest Output */}
+        {tab === 'latest' && result && selectedTheme && (
           <PromptOutput result={result} theme={selectedTheme} />
         )}
 
-        {/* Title History */}
-        <TitleHistory history={history} />
+        {/* History */}
+        {tab === 'history' && (
+          history.length > 0
+            ? <HistoryPanel history={history} />
+            : <div className="card p-8 text-center">
+                <p className="text-sm" style={{ color: 'var(--sk-text-dim)' }}>まだ履歴がありません</p>
+              </div>
+        )}
       </main>
 
       <footer className="py-4 text-center">
